@@ -1,5 +1,5 @@
 // #define PINBUZZER  10
-// #define PINBOTON  11
+#define PINBOTON  4
 
 // int base = 225;
 // int maxspeed = 250;
@@ -9,7 +9,7 @@
 
 int base = 150; 
 int maxspeed = 200;
-float Kprop = 7.20;
+float Kprop = 7.30;
 float Kderiv = 12.98;
 float Kinte = 0.0001;
 int pos;
@@ -76,23 +76,29 @@ int FRsensor = 12;
 
 
 void setup() {
+  
   Serial.begin(115200);
   pinMode(13, OUTPUT);
-  pinMode(8, OUTPUT);
-  pinMode(FLsensor , INPUT);
-  pinMode(FRsensor , INPUT);
-
   digitalWrite(13, LOW);
+  Serial.println("AUM");
+  pinMode(PINBOTON, INPUT_PULLUP);
   Motores(0, 0);
-  //  WaitBoton();
-  digitalWrite(13, HIGH);
-  //  Peripherals_init();
-  TB6612FNG_init();
-
+  while (!digitalRead(PINBOTON))
+    ;
   delay(1000);
+  Motores(-100, 100);
+  Serial.println("calibrate");
+  digitalWrite(13, HIGH);
+  TB6612FNG_init();
   calibracion();
-
+  Motores(0, 0);
   digitalWrite(13, LOW);
+
+  while (digitalRead(PINBOTON))
+    ;
+  Serial.println("RUN");
+  delay(1000);
+  digitalWrite(13, HIGH);
 }
 
 
@@ -114,24 +120,25 @@ Brl();
 Leaw();
 FL();
 HA();
-while(true)
-  {
-   int line_position = GetPos();
-    int Correction_power = PIDLambo(line_position, Kprop, Kderiv, Kinte);
-    int leftSpeed = base + Correction_power;
-    int rightSpeed = base - Correction_power;
-    if (leftSpeed > maxspeed) {
-      leftSpeed = maxspeed;
-    }
-    if (rightSpeed > maxspeed) {
-      rightSpeed = maxspeed;
-    }
-    Motores(leftSpeed, rightSpeed); 
-  }
-// while(true){
-//   Motores(0,0);
-// }
-// delay(60);
+Tor();
+// while(true)
+//   {
+//    int line_position = GetPos();
+//     int Correction_power = PIDLambo(line_position, Kprop, Kderiv, Kinte);
+//     int leftSpeed = base + Correction_power;
+//     int rightSpeed = base - Correction_power;
+//     if (leftSpeed > maxspeed) {
+//       leftSpeed = maxspeed;
+//     }
+//     if (rightSpeed > maxspeed) {
+//       rightSpeed = maxspeed;
+//     }
+//     Motores(leftSpeed, rightSpeed); 
+//   }
+while(true){
+  Motores(0,0);
+}
+delay(60);
 // Serial.print(digitalRead(FLsensor));
 // Serial.print("  ");
 // Serial.println(digitalRead(FRsensor));
@@ -472,7 +479,26 @@ void FL(){
 
 void HA() {
   Motores(base,base);
-  delay(100);
+  delay(90);
   Motores(0,base);
   delay(150);
+}
+
+void Tor() {
+  while( x != 4 ) {
+    int line_position = GetPos();
+    int Correction_power = PIDLambo(line_position, Kprop, Kderiv, Kinte);
+    int leftSpeed = base + Correction_power;
+    int rightSpeed = base - Correction_power;
+    if (leftSpeed > maxspeed) {
+      leftSpeed = maxspeed;
+    }
+    if (rightSpeed > maxspeed) {
+      rightSpeed = maxspeed;
+    }
+    Motores(leftSpeed, rightSpeed); 
+    if( line_position == 255 || line_position == -255 ) {
+      x = x + 1;
+    }
+  }
 }
